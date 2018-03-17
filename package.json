@@ -1,0 +1,32 @@
+{
+  "name": "easy-fetch",
+  "version": "1.0.0",
+  "description": "Makes fetch a little easier to use, especially if you do a lot of fetches with the same headers or a custom http agent",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test",
+    "lint": "eslint **/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jschirrmacher/easy-fetch.git"
+  },
+  "keywords": [
+    "fetch",
+    "nodejs",
+    "http",
+    "https",
+    "CA"
+  ],
+  "author": "joachimschirrmacher@gmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jschirrmacher/easy-fetch/issues"
+  },
+  "homepage": "https://github.com/jschirrmacher/easy-fetch#readme",
+  "devDependencies": {
+    "eslint": "^4.19.0",
+    "mocha": "^5.0.4",
+    "should": "^13.2.1"
+  }
+}

@@ -21,7 +21,7 @@ const fetch = require('easy-fetch')
 ```javascript
 fetch('https://httpbin.org/anything')
   .then(result => console.log(result.headers['User-Agent']))
-  .catch(error => console.error('' + error)
+  .catch(error => console.error('' + error))
 ```
 
 The result returned directly in `then()` is already the parsed content of a JSON response or the text the server responded with `text/plain` Content-Type.

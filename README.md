@@ -1,4 +1,4 @@
-# easy-fetch
+# js-easy-fetch
 
 The goals of this packages are...
 
@@ -10,11 +10,11 @@ The goals of this packages are...
 
 ## Usage examples
 
-In every case, you need to require your favourite fetch function first and assign it to the global scope, then require or import `easy-fetch`:
+In every case, you need to require your favourite fetch function first and assign it to the global scope, then require or import `js-easy-fetch`:
 
 ```javascript
 global.fetch = require('node-fetch')
-const fetch = require('easy-fetch')
+const fetch = require('js-easy-fetch')
 ```
 
 ### Doing fetches
@@ -74,7 +74,7 @@ const logger = {
 fetch.setLogger(logger)
 ```
 
-*easy-fetch* logs failing request with `error()` and info about requests and request performance with `debug()`:
+*js-easy-fetch* logs failing request with `error()` and info about requests and request performance with `debug()`:
 
 ```
 DEBUG: GET https://httpbin.org/status/404 (898435.3980102539µs)

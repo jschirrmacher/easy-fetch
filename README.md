@@ -14,7 +14,8 @@ In every case, you need to require your favourite fetch function first and assig
 
 ```javascript
 global.fetch = require('node-fetch')
-const fetch = require('js-easy-fetch')
+const EasyFetch = require('js-easy-fetch')
+const fetch = new EasyFetch()
 ```
 
 ### Doing fetches
@@ -82,3 +83,24 @@ ERROR: 404 NOT FOUND
 ```
 
 In case of a failing request, in addition to the error, the content of the request is also logged (with `debug()`) which might help to make it easier to find the source of the problem.
+
+## Upgrading from version 1.x
+
+The main difference between versions 1.x and 2.x is that `js-easy-fetch` needs to be instantiated now.
+This helps using multiple fetch contexts (e.g. using different default headers for different servers).
+But on the other hand, it requires to modify your code. Instead of
+
+```javascript
+const fetch = require('js-easy-fetch')
+```
+
+you need
+```javascript
+const EasyFetch = require('js-easy-fetch')
+const fetch = new EasyFetch()
+```
+
+or, if you dont need multiple contexts, but like shortness:
+```javascript
+const fetch = require('js-easy-fetch')()
+```

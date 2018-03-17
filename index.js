@@ -16,7 +16,7 @@ function simpleFetch(url, options = {}) {
   const startTime = microseconds()
   return fetch(url, Object.assign({}, defaultOptions, options))
     .then(response => {
-      const request = (options.method || 'GET').toUpperCase() + ' ' + url
+      const request = (options.method || 'GET').toUpperCase() + ' ' + url.replace(/^(https?:\/\/)[\w\.:=]+@/, '$1')
       const requestTime = microseconds() - startTime
       const type = response.headers.get('content-type')
       return Promise.resolve(type.match(/json/) ? response.json() : response.text())

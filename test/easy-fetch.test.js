@@ -159,4 +159,17 @@ describe('easy-fetch', () => {
       })
       .catch(done)
   })
+
+  it('should hide plain text login credentials from log files', done => {
+    global.fetch = () => Promise.resolve({ok: true, headers: textHeader, text})
+    const fetch = requireFetch()
+    fetch.setLogger(logger)
+    messages = []
+    fetch('http://john.doe:secretpassword@example.com/file')
+      .then(() => {
+        messages[0].should.match(/^DEBUG: GET http:\/\/example.com\/file/)
+        done()
+      })
+      .catch(done)
+  })
 })

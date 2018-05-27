@@ -1,6 +1,6 @@
 'use strict'
 /* eslint-env node, mocha */
-require('should')
+const should = require('should')
 const EasyFetch = require('..')
 
 const headers = which => ({get: () => which})
@@ -10,15 +10,25 @@ const jsonHeader = headers('application/json')
 const json = () => ({a: 1})
 const text = () => 'fetch result as text'
 
-let messages = []
+function Logger() {
+  let messages = []
+  return {
+    debug: message => messages.push('DEBUG: ' + message),
+    error: message => messages.push('ERROR: ' + message),
+    getMessages: () => messages
+  }
+}
 
-const logger = {
-  debug: message => messages.push('DEBUG: ' + message),
-  error: message => messages.push('ERROR: ' + message)
+function errorResult(thisHeaders = jsonHeader) {
+  return () => Promise.resolve({ok: false, status: 500, statusText: 'Error', headers: thisHeaders, json, text})
+}
+
+function okResult(thisHeaders = jsonHeader) {
+  return () => Promise.resolve({ok: true, headers: thisHeaders, json, text})
 }
 
 describe('easy-fetch', () => {
-  it('should send request to the given url with the given method', done => {
+  it('should send request to the given url with the given method', async () => {
     let lastRequest
 
     global.fetch = (url, options) => {
@@ -27,80 +37,77 @@ describe('easy-fetch', () => {
     }
 
     const fetch = new EasyFetch()
-    fetch('http://example.com/path/file', {method: 'OPTIONS'})
-      .then(result => {
-        lastRequest.should.equal('OPTIONS http://example.com/path/file')
-        result.should.equal('fetch result as text')
-        done()
-      })
-      .catch(done)
+    const result = await fetch('http://example.com/path/file', {method: 'OPTIONS'})
+    lastRequest.should.equal('OPTIONS http://example.com/path/file')
+    result.should.equal('fetch result as text')
   })
 
-  it('should handle json responses', done => {
-    global.fetch = () => Promise.resolve({ok: true, headers: jsonHeader, json})
+  it('should handle json responses', async () => {
+    global.fetch = okResult()
     const fetch = new EasyFetch()
-    fetch('http://example.com/path/file')
-      .then(result => result.should.deepEqual({a: 1}))
-      .then(() => done())
-      .catch(done)
+    const result = await fetch('http://example.com/path/file')
+    result.should.deepEqual({a: 1})
   })
 
-  it('should log requests in debug level', done => {
-    global.fetch = () => Promise.resolve({ok: true, headers: jsonHeader, json})
+  it('should log requests in debug level', async () => {
+    global.fetch = okResult()
     const fetch = new EasyFetch()
+    const logger = new Logger()
     fetch.setLogger(logger)
-    messages = []
-    fetch('http://example.com/')
-      .then(() => messages.should.match(/^DEBUG: GET http:\/\/example.com\//))
-      .then(() => done())
-      .catch(done)
+    await fetch('http://example.com/')
+    logger.getMessages().should.match(/^DEBUG: GET http:\/\/example.com\//)
   })
 
-  it('should log failing request in error level', done => {
-    global.fetch = () => Promise.resolve({ok: false, status: 500, statusText: 'Error', headers: jsonHeader, json})
+  it('should log failing request in error level', async () => {
+    const logger = new Logger()
+    try {
+      global.fetch = errorResult()
+      const fetch = new EasyFetch()
+      fetch.setLogger(logger)
+      await fetch('http://example.com/')
+      should.fail()
+    } catch (error) {
+      logger.getMessages()[1].should.equal('ERROR: 500 Error')
+    }
+  })
+
+  it('should log information even if the request fails', async () => {
+    const logger = new Logger()
+    try {
+      global.fetch = errorResult()
+      const fetch = new EasyFetch()
+      fetch.setLogger(logger)
+      await fetch('http://example.com/')
+      should.fail()
+    } catch (error) {
+      logger.getMessages()[0].should.match(/^DEBUG: GET http:\/\/example.com\//)
+    }
+  })
+
+  it('should log the content if the request fails', async () => {
+    const logger = new Logger()
+    try {
+      global.fetch = errorResult()
+      const fetch = new EasyFetch()
+      fetch.setLogger(logger)
+      await fetch('http://example.com/')
+      should.fail()
+    } catch (error) {
+      error.message.should.equal('500 Error')
+      logger.getMessages()[2].should.match(/^DEBUG: {"a":1}/)
+    }
+  })
+
+  it('should report request time', async () => {
+    global.fetch = okResult()
     const fetch = new EasyFetch()
-    messages = []
+    const logger = new Logger()
     fetch.setLogger(logger)
-    fetch('http://example.com/')
-      .catch(() => messages[1].should.equal('ERROR: 500 Error'))
-      .then(() => done())
-      .catch(done)
+    await fetch('http://example.com/')
+    logger.getMessages().should.match(/\(\d+\.\d+µs\)$/)
   })
 
-  it('should log information even if the request fails', done => {
-    global.fetch = () => Promise.resolve({ok: false, status: 500, statusText: 'Error', headers: jsonHeader, json})
-    const fetch = new EasyFetch()
-    messages = []
-    fetch.setLogger(logger)
-    fetch('http://example.com/')
-      .catch(() => messages[0].should.match(/^DEBUG: GET http:\/\/example.com\//))
-      .then(() => done())
-      .catch(done)
-  })
-
-  it('should log the content if the request fails', done => {
-    global.fetch = () => Promise.resolve({ok: false, status: 500, statusText: 'Error', headers: jsonHeader, json})
-    const fetch = new EasyFetch()
-    messages = []
-    fetch.setLogger(logger)
-    fetch('http://example.com/')
-      .catch(() => messages[2].should.match(/^DEBUG: {"a":1}/))
-      .then(() => done())
-      .catch(done)
-  })
-
-  it('should report request time', done => {
-    global.fetch = () => Promise.resolve({ok: true, headers: jsonHeader, json})
-    const fetch = new EasyFetch()
-    fetch.setLogger(logger)
-    messages = []
-    fetch('http://example.com/')
-      .then(() => messages.should.match(/\(\d+\.\d+µs\)$/))
-      .then(() => done())
-      .catch(done)
-  })
-
-  it('should add default headers', done => {
+  it('should add default headers', async () => {
     const token = '1234567890'
     let found
     global.fetch = (url, options) => {
@@ -109,66 +116,64 @@ describe('easy-fetch', () => {
     }
     const fetch = new EasyFetch()
     fetch.addDefaultHeader('Authorization', token)
-    fetch('http://example.com/')
-      .then(() => found.should.equal(true))
-      .then(() => done())
-      .catch(done)
+    await fetch('http://example.com/')
+    found.should.equal(true)
   })
 
-  it('should use a given agent', done => {
+  it('should use a given agent', async () => {
     const agent = {myAgent: true}
-    let found = false
-    global.fetch = (url, options) => {
-      found = options.agent === agent
+    global.fetch = function fetch(url, options) {
+      if (options.agent !== agent) {
+        throw Error('agent not found')
+      }
       return Promise.resolve({ok: true, headers: jsonHeader, json})
     }
     const fetch = new EasyFetch()
     fetch.setAgent(agent)
-    fetch('http://example.com/')
-      .then(() => found.should.equal(true))
-      .then(() => done())
-      .catch(done)
+    await fetch('http://example.com/')
   })
 
-  it('should return error messages which can be converted into a string', done => {
-    global.fetch = () => Promise.resolve({ok: false, status: 500, statusText: 'Error', headers: textHeader, text})
-    const fetch = new EasyFetch()
-    fetch('http://example.com/')
-      .catch(error => {
-        const message = error.toString()
-        message.should.equal(text())
-        done()
-      })
-      .catch(done)
+  it('should return error messages which can be converted into a string', async () => {
+    try {
+      global.fetch = errorResult(textHeader)
+      const fetch = new EasyFetch()
+      await fetch('http://example.com/')
+      should.fail()
+    } catch (error) {
+      const message = error.toString()
+      message.should.equal(text())
+    }
   })
 
-  it('should hide plain text login credentials from log files', done => {
+  it('should hide plain text login credentials from log files', async () => {
     global.fetch = () => Promise.resolve({ok: true, headers: textHeader, text})
     const fetch = new EasyFetch()
+    const logger = new Logger()
     fetch.setLogger(logger)
-    messages = []
-    fetch('http://john.doe:secretpassword@example.com/file')
-      .then(() => messages[0].should.match(/^DEBUG: GET http:\/\/example.com\/file/))
-      .then(() => done())
-      .catch(done)
+    await fetch('http://john.doe:secretpassword@example.com/file')
+    logger.getMessages()[0].should.match(/^DEBUG: GET http:\/\/example.com\/file/)
   })
 
-  it('should have a new context each time it is required', done => {
-    let found = true
-    global.fetch = (url, options) => {
-      found = options.headers.test === '1'
-      return Promise.resolve({ok: true, headers: jsonHeader, json})
+  it('should have a new context each time it is required', async () => {
+    global.fetch = function fetch(url, options) {
+      if ('1' === options.headers.test) {
+        return Promise.resolve({ok: true, headers: jsonHeader, json})
+      } else {
+        throw Error('header not found')
+      }
     }
 
     const fetch0 = new EasyFetch()
     fetch0.addDefaultHeader('test', '1')
 
     const fetch = new EasyFetch()
-    fetch('http://example.com/')
-      .then(() => found.should.equal(false))
-      .then(() => fetch0('http://example.com'))
-      .then(() => found.should.equal(true))
-      .then(() => done())
-      .catch(done)
+    try {
+      const result = await fetch0('http://example.com')
+      result.should.deepEqual({a: 1})
+      await fetch('http://example.com/')
+      should.fail()
+    } catch (error) {
+      error.message.should.equal('header not found')
+    }
   })
 })

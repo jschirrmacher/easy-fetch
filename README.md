@@ -6,7 +6,7 @@ The goals of this packages are...
 2. ... make it easier to add the same (e.g. Authorization) headers on every request
 3. ... use a custom http agent, e.g. if you need to use company CAs
 4. ... make debugging easier by using a logging mechanism
-5. ... stay compatible with window.fetch API like node-fetch or 
+5. ... stay compatible with window.fetch API like (https://www.npmjs.com/package/node-fetch)[node-fetch]
 
 ## Usage examples
 
@@ -14,18 +14,29 @@ In every case, you need to require your favourite fetch function first and assig
 
 ```javascript
 global.fetch = require('node-fetch')
+const fetch = require('js-easy-fetch')()
+```
+
+If you need multiple instances of js-easy-fetch (e.g. because you need different authentication headers), you can create
+them by first requiring the constructor and then instantiate the different fetch instances:
+
+```javascript
 const EasyFetch = require('js-easy-fetch')
-const fetch = new EasyFetch()
+const twitterFetch = new EasyFetch()
+twitterFetch.addDefaultHeader('Authorization', 'Bearer ' + twitterToken)
+const facebookFetch = new EasyFetch()
+facebookFetch.addDefaultHeader('Authorization', 'Bearer ' + facebookToken)
 ```
 
 ### Doing fetches
 ```javascript
-fetch('https://httpbin.org/anything')
-  .then(result => console.log(result.headers['User-Agent']))
-  .catch(error => console.error('' + error))
+try {
+  const result = await fetch('https://httpbin.org/anything')
+  console.log(result.headers['User-Agent'])
+} catch (error) {
+  console.error('' + error)
+}
 ```
-
-The result returned directly in `then()` is already the parsed content of a JSON response or the text the server responded with `text/plain` Content-Type.
 
 In case fetch failed, the error is an object containing the HTTP response, the parsed content, the http error message (a string combined of the status code and the status text) and a `toString()` function to make it easy to print it like shown in the example above, which appends the object to an empty string (which implicitly calls `toString()`).
 

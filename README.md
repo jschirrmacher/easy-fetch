@@ -6,7 +6,7 @@ The goals of this packages are...
 2. ... make it easier to add the same (e.g. Authorization) headers on every request
 3. ... use a custom http agent, e.g. if you need to use company CAs
 4. ... make debugging easier by using a logging mechanism
-5. ... stay compatible with window.fetch API like (https://www.npmjs.com/package/node-fetch)[node-fetch]
+5. ... stay compatible with window.fetch API like [node-fetch](https://www.npmjs.com/package/node-fetch)
 
 ## Usage examples
 
